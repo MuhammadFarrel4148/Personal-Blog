@@ -313,6 +313,89 @@ const logoutAccount = async(request, h) => {
         response.code(400);
         return response;
     };
-}
+};
 
-module.exports = { registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount };
+const addArticle = async(request, h) => {
+    const { title, datepublishing, content } = request.payload;
+
+    try{
+        if(!title || !datepublishing || !content) {
+            const response = h.response({
+                status: 'fail',
+                message: 'masukkan data yang valid',
+            });
+            response.code(400);
+            return response;
+        };
+    
+        const userId = request.auth.credentials.id;
+        const id = nanoid(16)
+    
+        const [result] = await db.query(`INSERT INTO article(id, userId, title, content, publishingdate) VALUES(?, ?, ?, ?, ?)`, [id, userId, title, content, datepublishing]);
+    
+        if(result.affectedRows === 1) {
+            const response = h.response({
+                status: 'success',
+                message: 'artikel berhasil ditambahkan',
+                data: {
+                    id, title, content, datepublishing
+                }
+            });
+            response.code(201);
+            return response;
+        };
+    
+        const response = h.response({
+            status: 'fail',
+            message: 'artikel gagal dibuat, coba lagi',
+        });
+        response.code(400);
+        return response;
+
+    } catch(error) {
+        console.log(error)
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid add article'
+        })
+        response.code(400);
+        return response;
+    };
+};
+
+const editArticle = async(request, h) => {
+    const { id } = request.params;
+    const [existArticle] = await db.query(`SELECT * FROM article WHERE id = ?`, [id]);
+
+    const { titleUpdate = existArticle[0].title, datepublishingUpdate = existArticle[0].publishingdate, contentUpdate = existArticle[0].content } = request.payload || {};
+
+    try {
+        const [updateArticle] = await db.query(`UPDATE article SET title = ?, publishingdate = ?, content = ? WHERE id = ?`, [titleUpdate, datepublishingUpdate, contentUpdate, id]);
+
+        if(updateArticle.affectedRows === 1) {
+            const response = h.response({
+                status: 'success',
+                message: 'artikel berhasil diupdate',
+            });
+            response.code(200);
+            return response;
+        };
+
+        const response = h.response({
+            status: 'fail',
+            message: 'artikel gagal diupdate, coba lagi',
+        });
+        response.code(400);
+        return response;
+
+    } catch(error) {
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid edit article',
+        });
+        response.code(400);
+        return response;
+    };
+};
+
+module.exports = { AccessValidation, registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount, addArticle, editArticle };
