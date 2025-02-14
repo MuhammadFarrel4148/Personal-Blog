@@ -49,6 +49,38 @@ const AccessValidation = async(request, h) => {
     };
 };
 
+const AutomaticCodeOTP = async(request, h) => {
+    const { email } = request.payload;
+
+    try {
+        const [result] = await db.query(`SELECT * FROM codeotp WHERE email = ?`, [email]);
+
+        if(result.length > 0) {
+            const response = h.response({
+                status: 'success',
+                code: result[0].code,
+            });
+            response.code(200);
+            return response;
+        };
+
+        const response = h.response({
+            status: 'fail',
+            message: 'email tidak ditemukan',
+        });
+        response.code(404);
+        return response;
+
+    } catch(error) {
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid automatic code OTP',
+        });
+        response.code(400);
+        return response;
+    }
+};
+
 const registerAccount = async(request, h) => {
     const { username, email, password } = request.payload;
 
@@ -112,7 +144,7 @@ const loginAccount = async(request, h) => {
         const [account] = await db.query(`SELECT * FROM users WHERE email = ? AND password = ?`, [email, password]);
     
         if(account.length > 0) {
-            GenerateToken(account);
+            const token = GenerateToken(account);
     
             const response = h.response({
                 status: 'success',
@@ -208,13 +240,14 @@ const inputotp = async(request, h) => {
         if(existResult.length > 0) {
             const [existAccount] = await db.query(`SELECT * FROM users WHERE email = ?`, [existResult[0].email]);
             const [updatedPassword] = await db.query(`UPDATE users SET password = ? WHERE email = ?`, [newPassword, existAccount[0].email]);
+            await db.query(`DELETE FROM codeotp WHERE code = ?`, [codeOTP]);
 
             if(updatedPassword.affectedRows === 1) {
                 const response = h.response({
                     status: 'success',
                     message: 'password berhasil diubah',
                 });
-                response.code(400);
+                response.code(200);
                 return response;
             };
         };
@@ -262,7 +295,7 @@ const logoutAccount = async(request, h) => {
         };
 
         jwt.verify(token, process.env.JWT_SECRET);
-        await db.query(`INSERT INTO blacklisttoken WHERE token = ?`, [token]);
+        await db.query(`INSERT INTO blacklisttoken(token) VALUES(?)`, [token]);
 
         const response = h.response({
             status: 'success',
@@ -272,16 +305,14 @@ const logoutAccount = async(request, h) => {
         return response;
 
     } catch(error) {
+        console.log(error);
         const response = h.response({
             status: 'fail',
-            message: 'Invalid access validation',
+            message: 'Invalid logout account',
         });
         response.code(400);
         return response;
     };
 }
 
-module.exports = { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount };
-
-//table codeotp = email, code
-//blacklisttoken = token
+module.exports = { registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount };

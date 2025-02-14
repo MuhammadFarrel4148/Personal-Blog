@@ -1,4 +1,4 @@
-const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount } = require("./handler");
+const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount, AutomaticCodeOTP } = require("./handler");
 
 const routes = [
     {
@@ -15,6 +15,11 @@ const routes = [
         method: 'POST',
         path: '/forgotpassword',
         handler: forgotPassword,
+    },
+    {
+        method: 'POST',
+        path: '/automatic',
+        handler: AutomaticCodeOTP,
     },
     {
         method: 'POST',
