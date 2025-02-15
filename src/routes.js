@@ -1,4 +1,4 @@
-const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount, AutomaticCodeOTP, addArticle, AccessValidation, editArticle, deleteArticle, homeUser } = require("./handler");
+const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount, AutomaticCodeOTP, addArticle, AccessValidation, editArticle, deleteArticle, homeUser, getArticle, adminArticle } = require("./handler");
 
 const routes = [
     {
@@ -42,12 +42,18 @@ const routes = [
     {
         method: 'GET',
         path: '/article/{id}',
-        handler: () => {},
+        handler: getArticle,
+        options: {
+            pre: [{ method: AccessValidation }]
+        }
     },
     {
         method: 'GET',
         path: '/admin',
-        handler: () => {},
+        handler: adminArticle,
+        options: {
+            pre: [{ method: AccessValidation }]
+        }
     },
     {
         method: 'POST',

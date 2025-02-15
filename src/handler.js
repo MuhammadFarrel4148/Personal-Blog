@@ -399,6 +399,65 @@ const addArticle = async(request, h) => {
     };
 };
 
+const getArticle = async(request, h) => {
+    const { id } = request.params;
+
+    try {
+        const [article] = await db.query(`SELECT * FROM article WHERE id = ?`, [id]);
+
+        if(!article) {
+            const response = h.response({
+                status: 'fail',
+                message: 'artikel tidak ditemukan, coba lagi',
+            });
+            response.code(404);
+            return response;
+        };
+
+        const response = h.response({
+            status: 'success',
+            data: {
+                result: article.map(({ title, publishingdate, content }) => ({ title, publishingdate, content }))
+            }
+        });
+        response.code(200);
+        return response;
+
+    } catch(error) {
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid get article',
+        });
+        response.code(400);
+        return response;
+    };
+};
+
+const adminArticle = async(request, h) => {
+    const userId = request.auth.credentials.id;
+
+    try {
+        const [articles] = await db.query(`SELECT * FROM article WHERE userId = ?`, [userId]);
+
+        const response = h.response({
+            status: 'success',
+            data: {
+                result: articles.map(({ title }) => ({ title }))
+            }
+        });
+        response.code(200);
+        return response;
+
+    } catch(error) {
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid admin article',
+        });
+        response.code(400);
+        return response;
+    };
+};
+
 const editArticle = async(request, h) => {
     const userId = request.auth.credentials.id;
     const { id } = request.params;
@@ -468,4 +527,4 @@ const deleteArticle = async(request, h) => {
     };
 };
 
-module.exports = { AccessValidation, registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount, homeUser, addArticle, editArticle, deleteArticle };
+module.exports = { AccessValidation, registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount, homeUser, addArticle, getArticle, adminArticle, editArticle, deleteArticle };
