@@ -315,6 +315,42 @@ const logoutAccount = async(request, h) => {
     };
 };
 
+const homeUser = async(request, h) => {
+    const { username } = request.params;
+
+    try {
+        const [user] = await db.query(`SELECT * FROM users WHERE username = ?`, [username]);
+
+        if(!user) {
+            const response = h.response({
+                status: 'fail',
+                message: 'user tidak ditemukan',
+            });
+            response.code(404);
+            return response;
+        };
+
+        const [articles] = await db.query(`SELECT * FROM article WHERE userId = ?`, [user[0].id]);
+
+        const response = h.response({
+            status: 'success',
+            data: {
+                result: articles.map(({ title, publishingdate }) => ({ title, publishingdate })),
+            }
+        });
+        response.code(200);
+        return response;
+
+    } catch(error) {
+        const response = h.respones({
+            status: 'fail',
+            message: 'Invalid get all article user'
+        });
+        response.code(400);
+        return response;
+    };
+};
+
 const addArticle = async(request, h) => {
     const { title, datepublishing, content } = request.payload;
 
@@ -364,8 +400,9 @@ const addArticle = async(request, h) => {
 };
 
 const editArticle = async(request, h) => {
+    const userId = request.auth.credentials.id;
     const { id } = request.params;
-    const [existArticle] = await db.query(`SELECT * FROM article WHERE id = ?`, [id]);
+    const [existArticle] = await db.query(`SELECT * FROM article WHERE id = ? AND userId = ?`, [id, userId]);
 
     const { titleUpdate = existArticle[0].title, datepublishingUpdate = existArticle[0].publishingdate, contentUpdate = existArticle[0].content } = request.payload || {};
 
@@ -398,4 +435,37 @@ const editArticle = async(request, h) => {
     };
 };
 
-module.exports = { AccessValidation, registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount, addArticle, editArticle };
+const deleteArticle = async(request, h) => {
+    const userId = request.auth.credentials.id;
+    const { id } = request.params;
+
+    try {
+        const [article] = await db.query(`DELETE FROM article WHERE userId = ? AND id = ?`, [userId, id]);
+
+        if(article.affectedRows === 1) {
+            const response = h.response({
+                status: 'success',
+                message: 'article berhasil dihapus',
+            });
+            response.code(200);
+            return response;
+        };
+
+        const response = h.response({
+            status: 'fail',
+            message: 'article tidak ditemukan, coba lagi',
+        });
+        response.code(400);
+        return response;
+
+    } catch(error) {
+        const response = h.response({
+            status: 'fail',
+            message: 'Invalid delete',
+        });
+        response.code(400);
+        return response;
+    };
+};
+
+module.exports = { AccessValidation, registerAccount, loginAccount, forgotPassword, AutomaticCodeOTP, inputotp, logoutAccount, homeUser, addArticle, editArticle, deleteArticle };

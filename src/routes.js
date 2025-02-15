@@ -1,4 +1,4 @@
-const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount, AutomaticCodeOTP, addArticle, AccessValidation, editArticle } = require("./handler");
+const { registerAccount, loginAccount, forgotPassword, inputotp, logoutAccount, AutomaticCodeOTP, addArticle, AccessValidation, editArticle, deleteArticle, homeUser } = require("./handler");
 
 const routes = [
     {
@@ -34,7 +34,10 @@ const routes = [
     {
         method: 'GET',
         path: '/home/{username}',
-        handler: () => {},
+        handler: homeUser,
+        options: {
+            pre: [{ method: AccessValidation }]
+        }
     },
     {
         method: 'GET',
@@ -55,7 +58,7 @@ const routes = [
         },
     },
     {
-        method: 'POST',
+        method: 'PUT',
         path: '/edit/{id}',
         handler: editArticle,
         options: {
@@ -63,10 +66,13 @@ const routes = [
         }
     },
     {
-        method: 'GET',
+        method: 'DELETE',
         path: '/delete/{id}',
-        handler: () => {},
+        handler: deleteArticle,
+        options: {
+            pre: [{ method: AccessValidation }]
+        }
     },
 ];
 
-module.exports = routes
+module.exports = routes;
